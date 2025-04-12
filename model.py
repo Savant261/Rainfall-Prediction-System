@@ -4,26 +4,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.utils import resample
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
+from sklearn.metrics import roc_auc_score, roc_curve
+from sklearn.metrics import precision_recall_curve, average_precision_score
+from sklearn.model_selection import learning_curve
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 import pickle
 
-"""resample = used for downsampling the classes required for classification as different classes might have different datapoints
-
-train_test_split = Splits a dataset into training and testing subsets.
-
-This is crucial for evaluating the performance of a machine learning model on unseen data.
-
-Prevents overfitting by ensuring the model is tested on data it hasn’t seen during training.
-
-GridSearchCV = Performs hyperparameter tuning by exhaustively searching over a specified parameter grid.
-
-Uses cross-validation to evaluate the model's performance for each combination of hyperparameters.
-
-cross_val_score = Evaluates a model using cross-validation.
-
-Splits the data into k folds, trains the model on k-1 folds, and validates it on the remaining fold. This process is repeated k times.
-"""
 
 data = pd.read_csv("E:\Python\Cloudburst Prediction System\Rainfall (1).csv")
 
@@ -37,13 +24,12 @@ data.tail()
 
 data.info()
 
-#we have two missing values in last 2 columns and also a whitespace
 data.columns = data.columns.str.strip()
 data.columns
 
 data.info()
 
-#day is a temporal column so removing it
+
 
 data = data.drop(columns = ['day'])
 data.head()
@@ -64,9 +50,8 @@ data['rainfall'] = data['rainfall'].map({"yes":1, "no":0})
 
 data
 
-"""**Exploratory Data Analysis(EDA)**"""
+#Exploratory Data Analysis(EDA)
 
-#setting plot style for all plots
 sns.set(style="whitegrid")
 
 data.columns
@@ -87,17 +72,15 @@ sns.countplot(x="rainfall", data=data)
 plt.title("Distribution of Rainfall")
 plt.show()
 
-"""As 1 has 250 datapoints and 0 has around 120 datapoints, so we need to downsample the column(dataPoints) to properly train the model."""
+#HEATMAP FOR DETECTING CORRELATIONS
 
-#observe correlation matrix by heatmaps
 plt.figure(figsize=(10,8))
 sns.heatmap(data.corr(),annot=True, cmap='coolwarm',fmt=".2f")
 plt.title("Correlation heatmap")
 plt.show()
 
-"""highly correlated columns lead to high colinearity which means those columns contribute the same thing to the target variable which should be avoided"""
+#BOXPLOT 
 
-#identifying outliers using boxplot
 plt.figure(figsize=(15,10))
 for i, column in enumerate(['pressure', 'maxtemp', 'temparature', 'mintemp', 'dewpoint', 'humidity','cloud', 'sunshine','windspeed'],1):
   plt.subplot(3,3,i)
@@ -106,21 +89,15 @@ for i, column in enumerate(['pressure', 'maxtemp', 'temparature', 'mintemp', 'de
 plt.tight_layout()
 plt.show()
 
-"""hollow circles outside the thin horizontal lines represents outliers, as they are few in numbers so no action
 
-**DATA PREPROCESSING**
-"""
+#DATA PREPROCESSING
 
-#dropping highly correlated columns
 data = data.drop(columns = ['maxtemp', 'temparature', 'mintemp'])
 
 data.head()
 
-#downsampling
-#separate majority and minority classes
 print(data['rainfall'].value_counts())
 
-#so majority is 1 and minority is 0
 
 df_majority = data[data['rainfall'] == 1]
 df_minority = data[data['rainfall'] == 0]
@@ -128,10 +105,9 @@ df_minority = data[data['rainfall'] == 0]
 print(df_majority.shape)
 print(df_minority.shape)
 
-#downsample majority class to minority class
-df_majority_downsampled = resample(df_majority, replace=False, n_samples=len(df_minority),random_state=42)
+#Downsampling
 
-"""replace=false makes sure to remove duplicated rows while resampling"""
+df_majority_downsampled = resample(df_majority, replace=False, n_samples=len(df_minority),random_state=42)
 
 df_majority_downsampled.shape
 
@@ -141,21 +117,21 @@ df_downsampled.shape
 
 df_downsampled.head()
 
-#shuffle the final dataframe
+
 df_downsampled = df_downsampled.sample(frac=1, random_state=42).reset_index(drop=True)
 
 df_downsampled.head()
 
 df_downsampled["rainfall"].value_counts()
 
-#splitting data into training data and test data
-#split features and target as x and y
 x = df_downsampled.drop(columns=['rainfall'])
 y = df_downsampled['rainfall']
 
+
+#MODEL TRAINING
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
 
-"""test_size=0.2 means 20% is testing data and remaining 80% is training data"""
+
 
 rf_model = RandomForestClassifier(random_state=42)
 
@@ -173,10 +149,10 @@ grid_search_rf.fit(x_train, y_train)
 best_rf_model = grid_search_rf.best_estimator_
 print("best parameters for Random Forest:", grid_search_rf.best_params_)
 
-"""**Model Evaluation**"""
+#Model Evaluation
 
 cv_scores = cross_val_score(best_rf_model, x_train, y_train, cv=5)
-print("Cross validation sscores:", cv_scores)
+print("Cross validation scores:", cv_scores)
 print("Mean cross validation score:", np.mean(cv_scores))
 
 y_pred = best_rf_model.predict(x_test)
@@ -184,12 +160,68 @@ print("Test set Accuracy:", accuracy_score(y_test, y_pred))
 print("Test set Confusion Matrix", confusion_matrix(y_test, y_pred))
 print("Test set Classification Report", classification_report(y_test, y_pred))
 
-"""y_test = testing part to check tuning of model
-Model accuracy = 74% (not that good, changes in parameters values will increase it)
 
-**Prediction on unknown data**
-"""
+# Calculate ROC-AUC score
+y_pred_proba = best_rf_model.predict_proba(x_test)[:, 1]  
+roc_auc = roc_auc_score(y_test, y_pred_proba)
+print("Test set ROC-AUC Score:", roc_auc)
 
+# Plot ROC Curve
+fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
+plt.figure(figsize=(8, 6))
+plt.plot(fpr, tpr, label=f"ROC Curve (AUC = {roc_auc:.2f})")
+plt.plot([0, 1], [0, 1], 'k--')  # Diagonal line for random guessing
+plt.xlabel("False Positive Rate")
+plt.ylabel("True Positive Rate")
+plt.title("ROC Curve for Random Forest Classifier")
+plt.legend(loc="lower right")
+plt.grid(True)
+plt.show()
+
+
+#Precision-Recall curve
+precision, recall, thresholds = precision_recall_curve(y_test, y_pred_proba)
+avg_precision = average_precision_score(y_test, y_pred_proba)
+print("Average Precision Score:", avg_precision)
+
+#Plotting Curve
+plt.figure(figsize=(8, 6))
+plt.plot(recall, precision, label=f"PR Curve (AP = {avg_precision:.2f})")
+plt.xlabel("Recall")
+plt.ylabel("Precision")
+plt.title("Precision-Recall Curve for Random Forest Classifier")
+plt.legend(loc="lower left")
+plt.grid(True)
+plt.show()
+
+
+#Learning curves
+train_sizes, train_scores, val_scores = learning_curve(
+    best_rf_model, x_train, y_train, cv=5, n_jobs=-1,
+    train_sizes=np.linspace(0.1, 1.0, 10), scoring='accuracy'
+)
+
+# Compute mean and std for training and validation scores
+train_mean = np.mean(train_scores, axis=1)
+train_std = np.std(train_scores, axis=1)
+val_mean = np.mean(val_scores, axis=1)
+val_std = np.std(val_scores, axis=1)
+
+# Plot learning curves
+plt.figure(figsize=(10, 6))
+plt.plot(train_sizes, train_mean, label="Training Accuracy", marker='o')
+plt.plot(train_sizes, val_mean, label="Validation Accuracy", marker='o')
+plt.fill_between(train_sizes, train_mean - train_std, train_mean + train_std, alpha=0.1)
+plt.fill_between(train_sizes, val_mean - val_std, val_mean + val_std, alpha=0.1)
+plt.xlabel("Training Set Size")
+plt.ylabel("Accuracy")
+plt.title("Learning Curves for Random Forest Classifier")
+plt.legend(loc="best")
+plt.grid(True)
+plt.show()
+
+
+#Prediction on unknown data
 input = (1010.4, 20.1, 88, 79, 0.1, 78.9, 48.2)
 
 input_df = pd.DataFrame([input], columns = ['pressure', 'dewpoint', 'humidity', 'cloud', 'sunshine', 'winddirection', 'windspeed'])
@@ -211,7 +243,6 @@ model_data = {"model":best_rf_model, "features_names":x.columns.tolist()}
 with open("rainfall_prediction_model.pkl", "wb") as file:
   pickle.dump(model_data, file)
 
-"""**Load pickle model and use for prediction**"""
 
 import pickle
 import pandas as pd
