@@ -2,7 +2,7 @@
 
 A machine learning project designed to predict the probability of rainfall using historical weather data. This system provides an interactive dashboard, built with Streamlit, to visualize data and make live predictions.
 
-[**» View Live Demo**](https://www.google.com/search?q=https://your-streamlit-app-url.streamlit.app) 
+[**» View Live Demo**](https://rainfall-prediction-system-hq23cbe26hkk6ltymxdjiq.streamlit.app/) 
 
 -----
 
