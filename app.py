@@ -101,7 +101,7 @@ def create_radar_chart(categories, values, title):
 # Loading the model
 def load_model(filepath):
     try:
-        model_data = joblib.load("E:\\Python\\Cloudburst Prediction System\\rainfall_prediction_model.pkl")
+        model_data = joblib.load("rainfall_prediction_model.pkl")
         return model_data["model"], model_data["features_names"]
     except Exception as e:
         st.error(f"Error loading model: {e}")
@@ -167,3 +167,4 @@ if st.sidebar.button("Predict"):
 
     except Exception as e:
         st.error(f"Error during prediction: {e}")
+
