@@ -8,7 +8,7 @@ A machine learning project designed to predict the probability of rainfall using
 
 ## 🎯 Features
 
-  * **Accurate Predictions:** Utilizes a `[Your Model, e.g., Random Forest/XGBoost]` model trained on [Name of Dataset, e.g., "Weather Australia"] dataset.
+  * **Accurate Predictions:** Utilizes an XGBoost (Extreme Gradient Boosting) classifier, a powerful tree-based boosting algorithm known for its performance and accuracy.
   * **Interactive Dashboard:** A user-friendly web interface built with Streamlit to input custom weather parameters and receive instant predictions.
   * **Data Visualization:** Includes charts and graphs to visualize historical weather patterns and data distributions.
   * **Scalable:** The data preprocessing pipeline and model are built to be easily retrained with new data.
@@ -93,8 +93,15 @@ Here is an overview of the key files in this project:
 
 ## 📈 The Model
 
-The prediction model is a `[e.g., Logistic Regression]` trained on [Number] features, including temperature, humidity, wind speed, and pressure. It was pre-processed using [e.g., standard scaling and one-hot encoding] and achieved an **accuracy of [XX.X]%** on the held-out test set.
+The prediction model is an XGBoost Classifier. It's an advanced implementation of a gradient boosting algorithm, which builds a strong predictive model by combining many "weak" decision trees sequentially.
 
+Algorithm: XGBoost (Extreme Gradient Boosting)
+
+Dataset: Trained on the [Name of Dataset, e.g., "Rainfall data (India)"] dataset.
+
+Features: Uses [7] features, including 'pressure', 'dewpoint', 'humidity', 'cloud', 'sunshine', 'winddirection', 'windspeed'.
+
+Performance: Achieved an accuracy of [81.2]% on the held-out test set.
 -----
 
 ## 🤝 Contributing
