@@ -4,7 +4,6 @@ A machine learning project designed to predict the probability of rainfall using
 
 [**» View Live Demo**](https://rainfall-prediction-system-hq23cbe26hkk6ltymxdjiq.streamlit.app/) 
 
------
 
 ## 🎯 Features
 
